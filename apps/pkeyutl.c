@@ -13,6 +13,7 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/evp.h>
+#include <crypto/evp.h>
 #include <sys/stat.h>
 
 #define KEY_NONE        0
@@ -25,7 +26,8 @@ static EVP_PKEY_CTX *init_ctx(const char *kdfalg, int *pkeysize,
                               char *passinarg, int pkey_op, ENGINE *e,
                               const int impl, int rawin, EVP_PKEY **ppkey,
                               EVP_MD_CTX *mctx, const char *digestname,
-                              OSSL_LIB_CTX *libctx, const char *propq);
+                              OSSL_LIB_CTX *libctx, const char *propq,
+			      unsigned int dontblind);
 
 static int setup_peer(EVP_PKEY_CTX *ctx, int peerform, const char *file,
                       ENGINE *e);
@@ -48,7 +50,8 @@ typedef enum OPTION_choice {
     OPT_PEERFORM, OPT_KEYFORM, OPT_PKEYOPT, OPT_PKEYOPT_PASSIN, OPT_KDF,
     OPT_KDFLEN, OPT_R_ENUM, OPT_PROV_ENUM,
     OPT_CONFIG,
-    OPT_RAWIN, OPT_DIGEST
+    OPT_RAWIN, OPT_DIGEST,
+    OPT_DONTBLIND
 } OPTION_CHOICE;
 
 const OPTIONS pkeyutl_options[] = {
@@ -94,6 +97,7 @@ const OPTIONS pkeyutl_options[] = {
      "Public key option that is read as a passphrase argument opt:passphrase"},
     {"kdf", OPT_KDF, 's', "Use KDF algorithm"},
     {"kdflen", OPT_KDFLEN, 'p', "KDF algorithm output length"},
+    {"dontblind", OPT_DONTBLIND, '-', "Don't blind attacker"},
 
     OPT_R_OPTIONS,
     OPT_PROV_OPTIONS,
@@ -128,7 +132,8 @@ int pkeyutl_main(int argc, char **argv)
     EVP_MD *md = NULL;
     int filesize = -1;
     OSSL_LIB_CTX *libctx = app_get0_libctx();
-
+    unsigned int dontblind = 0;
+    
     prog = opt_init(argc, argv, pkeyutl_options);
     while ((o = opt_next()) != OPT_EOF) {
         switch (o) {
@@ -249,6 +254,8 @@ int pkeyutl_main(int argc, char **argv)
         case OPT_DIGEST:
             digestname = opt_arg();
             break;
+	case OPT_DONTBLIND:
+	    dontblind = 1;
         }
     }
 
@@ -303,7 +310,7 @@ int pkeyutl_main(int argc, char **argv)
     }
     ctx = init_ctx(kdfalg, &keysize, inkey, keyform, key_type,
                    passinarg, pkey_op, e, engine_impl, rawin, &pkey,
-                   mctx, digestname, libctx, app_get0_propq());
+                   mctx, digestname, libctx, app_get0_propq(), dontblind);
     if (ctx == NULL) {
         BIO_printf(bio_err, "%s: Error initializing context\n", prog);
         goto end;
@@ -524,7 +531,8 @@ static EVP_PKEY_CTX *init_ctx(const char *kdfalg, int *pkeysize,
                               char *passinarg, int pkey_op, ENGINE *e,
                               const int engine_impl, int rawin,
                               EVP_PKEY **ppkey, EVP_MD_CTX *mctx, const char *digestname,
-                              OSSL_LIB_CTX *libctx, const char *propq)
+                              OSSL_LIB_CTX *libctx, const char *propq,
+			      unsigned int dontblind)
 {
     EVP_PKEY *pkey = NULL;
     EVP_PKEY_CTX *ctx = NULL;
@@ -602,6 +610,10 @@ static EVP_PKEY_CTX *init_ctx(const char *kdfalg, int *pkeysize,
     if (ctx == NULL)
         goto end;
 
+    if (dontblind) {
+        ctx->dontblind=1;
+    }
+    
     if (rawin) {
         EVP_MD_CTX_set_pkey_ctx(mctx, ctx);
 

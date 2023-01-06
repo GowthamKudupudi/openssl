@@ -107,7 +107,12 @@ static int rsa_init(void *vprsactx, void *vrsa, const OSSL_PARAM params[],
     RSA_free(prsactx->rsa);
     prsactx->rsa = vrsa;
     prsactx->operation = operation;
-
+    if (params && !strcmp(params[0].key,"dontblind")) {
+        if (*(unsigned int*)params[0].data == 1){
+	    RSA_blinding_off(prsactx->rsa);
+        }
+	params=NULL;
+    }
     switch (RSA_test_flags(prsactx->rsa, RSA_FLAG_TYPE_MASK)) {
     case RSA_FLAG_TYPE_RSA:
         prsactx->pad_mode = RSA_PKCS1_PADDING;

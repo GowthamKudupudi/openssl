@@ -128,6 +128,7 @@ struct evp_pkey_ctx_st {
      * when said deprecated API is excised completely.
      */
     BIGNUM *rsa_pubexp;
+    unsigned int dontblind;
 } /* EVP_PKEY_CTX */ ;
 
 #define EVP_PKEY_FLAG_DYNAMIC   1

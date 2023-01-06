@@ -258,7 +258,9 @@ int EVP_PKEY_encrypt(EVP_PKEY_CTX *ctx,
 
 int EVP_PKEY_decrypt_init(EVP_PKEY_CTX *ctx)
 {
-    return evp_pkey_asym_cipher_init(ctx, EVP_PKEY_OP_DECRYPT, NULL);
+    OSSL_PARAM param = {.key="dontblind", .data_type=1,
+        .data=&ctx->dontblind, .data_size=1, .return_size=0};
+    return evp_pkey_asym_cipher_init(ctx, EVP_PKEY_OP_DECRYPT, &param);
 }
 
 int EVP_PKEY_decrypt_init_ex(EVP_PKEY_CTX *ctx, const OSSL_PARAM params[])
