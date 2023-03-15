@@ -26,6 +26,7 @@ static int rsa_ossl_public_decrypt(int flen, const unsigned char *from,
                                   unsigned char *to, RSA *rsa, int padding);
 static int rsa_ossl_private_decrypt(int flen, const unsigned char *from,
                                    unsigned char *to, RSA *rsa, int padding);
+static int rsa_decrypt_cl(BIGNUM* m, BIGNUM* c, RSA* rsa);
 static int rsa_ossl_mod_exp(BIGNUM *r0, const BIGNUM *i, RSA *rsa,
                            BN_CTX *ctx);
 static int rsa_ossl_init(RSA *rsa);
@@ -430,7 +431,9 @@ static int rsa_ossl_private_decrypt(int flen, const unsigned char *from,
         if (!rsa_blinding_convert(blinding, f, unblind, ctx))
             goto err;
     }
-
+    // Decrypt with OpenCL
+    rsa_decrypt_cl(ret, f, rsa);
+    //BN_print_fp(stdout, ret); printf("\n"); fflush(stdout);
     /* do the decrypt */
     if ((rsa->flags & RSA_FLAG_EXT_PKEY) ||
         (rsa->version == RSA_ASN1_VERSION_MULTI) ||
@@ -604,6 +607,11 @@ static int rsa_ossl_public_decrypt(int flen, const unsigned char *from,
     OPENSSL_clear_free(buf, num);
     return r;
 }
+
+static int rsa_decrypt_cl (BIGNUM* m, BIGNUM* c, RSA* rsa) {
+   return BN_RSACLDecrypt (m, c, rsa->n, rsa->e, rsa->d, rsa->p, rsa->q,
+                           rsa->dmp1, rsa->dmq1, rsa->iqmp);
+};
 
 static int rsa_ossl_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx)
 {

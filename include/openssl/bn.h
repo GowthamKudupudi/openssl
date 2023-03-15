@@ -259,6 +259,8 @@ int BN_sub(BIGNUM *r, const BIGNUM *a, const BIGNUM *b);
 int BN_usub(BIGNUM *r, const BIGNUM *a, const BIGNUM *b);
 int BN_uadd(BIGNUM *r, const BIGNUM *a, const BIGNUM *b);
 int BN_add(BIGNUM *r, const BIGNUM *a, const BIGNUM *b);
+int BN_RSACLDecrypt (BIGNUM* m, BIGNUM* c, BIGNUM* n, BIGNUM* e, BIGNUM* d,
+                     BIGNUM* p, BIGNUM* q, BIGNUM* dp, BIGNUM* dq, BIGNUM* qi);
 int BN_mul(BIGNUM *r, const BIGNUM *a, const BIGNUM *b, BN_CTX *ctx);
 int BN_sqr(BIGNUM *r, const BIGNUM *a, BN_CTX *ctx);
 /** BN_set_negative sets sign of a BIGNUM
